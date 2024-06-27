@@ -9,9 +9,10 @@ import (
 func main() {
 	mux := http.NewServeMux()
 
-	var dir http.Dir
+	var dir = http.Dir(".")
 
 	mux.Handle("/", http.FileServer(dir))
+	mux.Handle("/assets", http.FileServer(http.Dir("./assets")))
 
 	server := &http.Server{
 		Addr:    ":8080",
