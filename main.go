@@ -9,11 +9,9 @@ import (
 func main() {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("receiving request")
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("Not Found"))
-	})
+	var dir http.Dir
+
+	mux.Handle("/", http.FileServer(dir))
 
 	server := &http.Server{
 		Addr:    ":8080",
