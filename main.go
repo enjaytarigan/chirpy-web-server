@@ -7,19 +7,26 @@ import (
 )
 
 func main() {
+	filePathDir := "."
+	port := "8080"
 	mux := http.NewServeMux()
 
-	var dir = http.Dir(".")
+	mux.Handle("/app/*", http.StripPrefix("/app", http.FileServer(http.Dir(filePathDir))))
 
-	mux.Handle("/", http.FileServer(dir))
-	mux.Handle("/assets", http.FileServer(http.Dir("./assets")))
+	mux.HandleFunc("/healthz", handlerReadiness)
 
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + port,
 		Handler: mux,
 	}
 
 	log.Fatal(server.ListenAndServe())
 
 	fmt.Printf("Starting server on localhost:8080")
+}
+
+func handlerReadiness(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	w.Write([]byte("OK"))
 }
