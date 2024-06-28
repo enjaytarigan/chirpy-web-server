@@ -1,19 +1,29 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 )
 
+type apiConfig struct {
+	fileserverHits int
+}
+
 func main() {
-	filePathDir := "."
 	port := "8080"
+	apiCfg := &apiConfig{fileserverHits: 0}
+
 	mux := http.NewServeMux()
 
-	mux.Handle("/app/*", http.StripPrefix("/app", http.FileServer(http.Dir(filePathDir))))
+	fsHandler := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
 
-	mux.HandleFunc("/healthz", handlerReadiness)
+	mux.Handle("/app/", apiCfg.middlewareMetricsInc(fsHandler))
+
+	mux.HandleFunc("GET /healthz", handlerReadiness)
+
+	mux.HandleFunc("GET /metrics", apiCfg.handlerMetrics)
+
+	mux.HandleFunc("GET /reset", apiCfg.handlerReset)
 
 	server := &http.Server{
 		Addr:    ":" + port,
@@ -21,12 +31,4 @@ func main() {
 	}
 
 	log.Fatal(server.ListenAndServe())
-
-	fmt.Printf("Starting server on localhost:8080")
-}
-
-func handlerReadiness(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	w.Write([]byte("OK"))
 }
