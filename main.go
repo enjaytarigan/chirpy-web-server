@@ -17,7 +17,7 @@ func main() {
 
 	fsHandler := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
 
-	mux.Handle("/app/*", apiCfg.middlewareMetricsInc(fsHandler))
+	mux.Handle("/app/", apiCfg.middlewareMetricsInc(fsHandler))
 
 	mux.HandleFunc("GET /healthz", handlerReadiness)
 
