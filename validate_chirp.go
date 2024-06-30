@@ -4,7 +4,29 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 )
+
+func cleanChirp(chirp string) string {
+	var cleanedChirp strings.Builder
+
+	words := strings.Split(chirp, " ")
+
+	for i, word := range words {
+		switch strings.ToLower(word) {
+		case "kerfuffle", "sharbert", "fornax": // Profone words
+			cleanedChirp.WriteString("****")
+		default:
+			cleanedChirp.WriteString(word)
+		}
+
+		if isLastIndex := i == len(words)-1; !isLastIndex {
+			cleanedChirp.WriteByte(' ')
+		}
+	}
+
+	return cleanedChirp.String()
+}
 
 func handersValidateChirp(w http.ResponseWriter, r *http.Request) {
 	var reqBody = struct {
@@ -14,32 +36,39 @@ func handersValidateChirp(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&reqBody)
 
 	if err != nil {
-		sendJSON(http.StatusInternalServerError, map[string]string{
-			"error": "Something went wrong",
-		}, w)
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong")
 		return
 	}
 
 	if len(reqBody.Body) > 140 {
-		sendJSON(http.StatusBadRequest, map[string]string{
-			"error": "Chirp is too long",
-		}, w)
+		respondWithError(w, http.StatusBadRequest, "Chirp is too long")
 		return
 	}
 
 	responseBody := struct {
-		Valid bool `json:"valid"`
+		CleanedBody string `json:"cleaned_body"`
 	}{
-		Valid: true,
+		CleanedBody: cleanChirp(reqBody.Body),
 	}
-	sendJSON(http.StatusOK, responseBody, w)
+
+	respondWithJSON(w, http.StatusOK, responseBody)
 }
 
-func sendJSON(statusCode int, body any, w http.ResponseWriter) {
+func respondWithError(w http.ResponseWriter, statusCode int, msg string) {
+	errResp := struct {
+		Error string `json:"error"`
+	}{
+		Error: msg,
+	}
+
+	respondWithJSON(w, statusCode, errResp)
+}
+
+func respondWithJSON(w http.ResponseWriter, statusCode int, payload any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 
-	err := json.NewEncoder(w).Encode(body)
+	err := json.NewEncoder(w).Encode(payload)
 
 	if err != nil {
 		fmt.Printf("error sending response: %v", err)
