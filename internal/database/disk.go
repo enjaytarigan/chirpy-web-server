@@ -15,15 +15,34 @@ var (
 )
 
 type DBStructure struct {
-	Chirps         map[int]Chirp `json:"chirps"`
-	LastInsertedId int
+	Chirps              map[int]Chirp `json:"chirps"`
+	LastInsertedChirpId int           `json:"lastInsertedChirpId"`
+	Users               map[int]User  `json:"users"`
+	LastInsertedUserId  int           `json:"lastInsertedUserId"`
 }
 
 func (dbs *DBStructure) AddChirp(chirp Chirp) Chirp {
-	chirp.ID = dbs.LastInsertedId + 1
+	if len(dbs.Chirps) == 0 {
+		dbs.LastInsertedChirpId = 0
+		dbs.Chirps = make(map[int]Chirp)
+	}
+
+	chirp.ID = dbs.LastInsertedChirpId + 1
 	dbs.Chirps[chirp.ID] = chirp
-	dbs.LastInsertedId++
+	dbs.LastInsertedChirpId++
 	return chirp
+}
+
+func (dbs *DBStructure) AddUser(user User) User {
+	if len(dbs.Users) == 0 {
+		dbs.LastInsertedUserId = 0
+		dbs.Users = make(map[int]User)
+	}
+
+	user.ID = dbs.LastInsertedUserId + 1
+	dbs.Users[user.ID] = user
+	dbs.LastInsertedUserId++
+	return user
 }
 
 type DB struct {
@@ -42,66 +61,6 @@ func NewDB(path string) (*DB, error) {
 	err := db.ensureDB()
 
 	return db, err
-}
-
-// CreateChirp creates a new chirp and saves it to disk
-func (db *DB) CreateChirp(body string) (Chirp, error) {
-	dbStructure, err := db.readDB()
-
-	if err != nil {
-		log.Println(err)
-		return Chirp{}, err
-	}
-
-	if len(dbStructure.Chirps) == 0 {
-		// Init DBStructure
-		dbStructure.Chirps = make(map[int]Chirp)
-		dbStructure.LastInsertedId = 0
-	}
-
-	chirp := dbStructure.AddChirp(Chirp{
-		Body: body,
-	})
-
-	err = db.writeDB(dbStructure)
-
-	if err != nil {
-		log.Println(err)
-		return Chirp{}, err
-	}
-
-	return chirp, nil
-}
-
-func (db *DB) GetChirps() ([]Chirp, error) {
-	dbStructure, err := db.readDB()
-
-	if err != nil {
-		return []Chirp{}, err
-	}
-
-	var chirps []Chirp
-	for _, chirp := range dbStructure.Chirps {
-		chirps = append(chirps, chirp)
-	}
-
-	return chirps, nil
-}
-
-func (db *DB) GetChirpByID(id int) (Chirp, error) {
-	dbStructure, err := db.readDB()
-
-	if err != nil {
-		return Chirp{}, err
-	}
-
-	chirp, ok := dbStructure.Chirps[id]
-
-	if !ok {
-		return Chirp{}, ErrChirpNotFound
-	}
-
-	return chirp, nil
 }
 
 // GetChirps returns all chirps in the database

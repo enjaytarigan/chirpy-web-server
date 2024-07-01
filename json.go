@@ -26,3 +26,13 @@ func respondWithJSON(w http.ResponseWriter, statusCode int, payload any) {
 		fmt.Printf("error sending response: %v", err)
 	}
 }
+
+func decodeJSON(r *http.Request, v any) error {
+	err := json.NewDecoder(r.Body).Decode(v)
+
+	if err != nil {
+		return fmt.Errorf("failed unmarshalling request body: %v", err)
+	}
+
+	return nil
+}
