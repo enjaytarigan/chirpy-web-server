@@ -21,6 +21,10 @@ type DBStructure struct {
 	LastInsertedUserId  int           `json:"lastInsertedUserId"`
 }
 
+func (dbs *DBStructure) DeleteChirpByID(chirpID int) {
+	delete(dbs.Chirps, chirpID)
+}
+
 func (dbs *DBStructure) AddChirp(chirp Chirp) Chirp {
 	if len(dbs.Chirps) == 0 {
 		dbs.LastInsertedChirpId = 0

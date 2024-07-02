@@ -3,13 +3,14 @@ package database
 import "time"
 
 type Chirp struct {
-	ID   int    `json:"id"`
-	Body string `json:"body"`
+	ID       int    `json:"id"`
+	AuthorID int    `json:"author_id"`
+	Body     string `json:"body"`
 }
 
 type UserRefreshToken struct {
-	Token           string `json:"token"`
-	ExpiriationTime time.Time
+	Token           string    `json:"token"`
+	ExpiriationTime time.Time `json:"expiration_time"`
 }
 
 func (rf *UserRefreshToken) IsExpired() bool {
@@ -24,7 +25,7 @@ type User struct {
 	ID           int               `json:"id"`
 	Email        string            `json:"email"`
 	Password     string            `json:"password"`
-	RefreshToken *UserRefreshToken `json:"refreshToken,omitempty"`
+	RefreshToken *UserRefreshToken `json:"refresh_token,omitempty"`
 }
 
 func (u *User) SetEmail(email string) {

@@ -3,7 +3,7 @@ package database
 import "log"
 
 // CreateChirp creates a new chirp and saves it to disk
-func (db *DB) CreateChirp(body string) (Chirp, error) {
+func (db *DB) CreateChirp(body string, authorID int) (Chirp, error) {
 	dbStructure, err := db.readDB()
 
 	if err != nil {
@@ -12,7 +12,8 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 	}
 
 	chirp := dbStructure.AddChirp(Chirp{
-		Body: body,
+		Body:     body,
+		AuthorID: authorID,
 	})
 
 	err = db.writeDB(dbStructure)
@@ -38,6 +39,25 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 	}
 
 	return chirps, nil
+}
+
+func (db *DB) DeleteChirpByID(chirpID int) error {
+	dbStructure, err := db.readDB()
+
+	if err != nil {
+		return err
+	}
+
+	dbStructure.DeleteChirpByID(chirpID)
+
+	err = db.writeDB(dbStructure)
+
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	return nil
 }
 
 func (db *DB) GetChirpByID(id int) (Chirp, error) {

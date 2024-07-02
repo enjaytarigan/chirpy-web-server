@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 )
 
 func (api *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +23,8 @@ func (api *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	chirp, err := api.db.CreateChirp(cleanChirp(reqBody.Body))
+	userID, _ := strconv.Atoi(r.Context().Value(UserLoggedInKey).(string))
+	chirp, err := api.db.CreateChirp(cleanChirp(reqBody.Body), userID)
 
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
