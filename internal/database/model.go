@@ -26,6 +26,7 @@ type User struct {
 	Email        string            `json:"email"`
 	Password     string            `json:"password"`
 	RefreshToken *UserRefreshToken `json:"refresh_token,omitempty"`
+	IsChirpyRed  bool              `json:"is_chirpy_red"`
 }
 
 func (u *User) SetEmail(email string) {
@@ -34,4 +35,8 @@ func (u *User) SetEmail(email string) {
 
 func (u *User) SetPassword(password string) {
 	u.Password = password
+}
+
+func (u *User) SetIsChirpyRed(state bool) {
+	u.IsChirpyRed = state
 }

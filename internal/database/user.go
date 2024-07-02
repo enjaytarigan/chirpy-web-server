@@ -66,7 +66,12 @@ func (db *DB) CheckUserExist(email string) bool {
 	return err == nil
 }
 
-func (db *DB) UpdateUser(userID int, email string, password string) (User, error) {
+type UpdateUserIn struct {
+	Email    string
+	Password string
+}
+
+func (db *DB) UpdateUser(userID int, in UpdateUserIn) (User, error) {
 	dbStructure, err := db.readDB()
 
 	if err != nil {
@@ -75,7 +80,7 @@ func (db *DB) UpdateUser(userID int, email string, password string) (User, error
 	}
 
 	if _, found := dbStructure.FindUser(func(u User) bool {
-		return u.Email == email
+		return u.Email == in.Email && u.ID != userID // find other user who has an email with the email want to updated
 	}); found {
 		return User{}, ErrEmailAlreadyRegistered
 	}
@@ -86,8 +91,13 @@ func (db *DB) UpdateUser(userID int, email string, password string) (User, error
 		return User{}, ErrUserNotFound
 	}
 
-	user.SetEmail(email)
-	user.SetPassword(password)
+	if user.Email != in.Email {
+		user.SetEmail(in.Email)
+	}
+
+	if user.Password != in.Password {
+		user.SetPassword(in.Password)
+	}
 
 	dbStructure.Users[user.ID] = user
 
@@ -162,4 +172,29 @@ func (db *DB) GetUserByRefreshToken(refreshToken string) (User, error) {
 	}
 
 	return user, nil
+}
+
+func (db *DB) UpdateIsChirpyRedStatus(userID int, state bool) error {
+	dbStructure, err := db.readDB()
+
+	if err != nil {
+		log.Printf("UpdateIsChirpyRedStatus: %v", err)
+		return err
+	}
+
+	user, ok := dbStructure.FindUserByID(userID)
+
+	if !ok {
+		return ErrUserNotFound
+	}
+
+	user.SetIsChirpyRed(state)
+
+	dbStructure.Users[user.ID] = user
+
+	if err := db.writeDB(dbStructure); err != nil {
+		return err
+	}
+
+	return nil
 }

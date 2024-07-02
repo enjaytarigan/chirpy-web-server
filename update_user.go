@@ -33,7 +33,10 @@ func (api *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 	ctx := r.Context()
 	userID, _ := strconv.Atoi(ctx.Value(UserLoggedInKey).(string))
 
-	updatedUser, err := api.db.UpdateUser(userID, body.Email, hashedPassword)
+	updatedUser, err := api.db.UpdateUser(userID, database.UpdateUserIn{
+		Email:    body.Email,
+		Password: hashedPassword,
+	})
 
 	if err != nil {
 		if errors.Is(err, database.ErrEmailAlreadyRegistered) {
