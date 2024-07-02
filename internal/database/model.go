@@ -10,3 +10,11 @@ type User struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
+
+func (u *User) SetEmail(email string) {
+	u.Email = email
+}
+
+func (u *User) SetPassword(password string) {
+	u.Password = password
+}
