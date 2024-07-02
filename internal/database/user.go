@@ -2,12 +2,13 @@ package database
 
 import (
 	"errors"
+	"fmt"
 	"log"
 )
 
 var (
 	ErrUserNotFound           = errors.New("User Not Found")
-	ErrEmailAlreadyRegistered = errors.New("Email has been registered")
+	ErrEmailAlreadyRegistered = errors.New("email has been registered")
 )
 
 func (db *DB) CreateUser(email string, password string) (User, error) {
@@ -92,6 +93,72 @@ func (db *DB) UpdateUser(userID int, email string, password string) (User, error
 
 	if err := db.writeDB(dbStructure); err != nil {
 		return User{}, err
+	}
+
+	return user, nil
+}
+
+func (db *DB) SaveRefreshToken(userID int, refreshToken *UserRefreshToken) error {
+	dbStructure, err := db.readDB()
+
+	if err != nil {
+		log.Printf("SaveRefreshToken: %v", err)
+		return err
+	}
+
+	user, found := dbStructure.FindUserByID(userID)
+
+	if !found {
+		return ErrUserNotFound
+	}
+
+	user.RefreshToken = refreshToken
+	dbStructure.Users[user.ID] = user
+
+	err = db.writeDB(dbStructure)
+
+	if err != nil {
+		return fmt.Errorf("SaveRefreshToken: %w", err)
+	}
+
+	return nil
+}
+
+func (db *DB) GetUserByID(userID int) (User, error) {
+	dbStructure, err := db.readDB()
+
+	if err != nil {
+		log.Printf("SaveRefreshToken: %v", err)
+		return User{}, err
+	}
+
+	user, found := dbStructure.FindUserByID(userID)
+
+	if !found {
+		return User{}, ErrUserNotFound
+	}
+
+	return user, nil
+}
+
+func (db *DB) GetUserByRefreshToken(refreshToken string) (User, error) {
+	dbStructure, err := db.readDB()
+
+	if err != nil {
+		log.Printf("GetUserByRefreshToken: %v", err)
+		return User{}, err
+	}
+
+	user, found := dbStructure.FindUser(func(u User) bool {
+		if u.RefreshToken == nil {
+			return false
+		}
+
+		return u.RefreshToken.Token == refreshToken
+	})
+
+	if !found {
+		return User{}, ErrUserNotFound
 	}
 
 	return user, nil

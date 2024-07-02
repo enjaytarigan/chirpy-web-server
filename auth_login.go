@@ -42,29 +42,40 @@ func (api *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	payloadExpiresIn, err := time.ParseDuration(fmt.Sprintf("%ds", payload.ExpiresInSeconds))
-
-	tokenExpiresIn := 24 * time.Hour // Default
-
-	if err == nil && payload.ExpiresInSeconds != 0 && payloadExpiresIn.Hours() < 24.0 {
-		tokenExpiresIn = payloadExpiresIn
-	}
-
-	token, err := api.jwt.GenerateToken(user.ID, tokenExpiresIn)
+	token, err := api.jwt.GenerateToken(user.ID, 1*time.Hour)
 
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
+	refreshToken, err := security.GenerateRandToken(32)
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	err = api.db.SaveRefreshToken(user.ID, &database.UserRefreshToken{
+		Token:           refreshToken,
+		ExpiriationTime: time.Now().Add(60 * (24 * time.Hour)),
+	})
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("could not save refresh token: %v", err))
+		return
+	}
+
 	responeBody := struct {
-		ID    int    `json:"id"`
-		Email string `json:"email"`
-		Token string `json:"token"`
+		ID           int    `json:"id"`
+		Email        string `json:"email"`
+		Token        string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}{
-		ID:    user.ID,
-		Email: user.Email,
-		Token: token,
+		ID:           user.ID,
+		Email:        user.Email,
+		Token:        token,
+		RefreshToken: refreshToken,
 	}
 
 	respondWithJSON(w, http.StatusOK, responeBody)
