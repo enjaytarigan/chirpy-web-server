@@ -2,7 +2,9 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/enjaytarigan/chirpy-web-server/internal/database"
 	"github.com/enjaytarigan/chirpy-web-server/internal/security"
@@ -10,8 +12,9 @@ import (
 
 func (api *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	payload := struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		Email            string `json:"email"`
+		Password         string `json:"password"`
+		ExpiresInSeconds int    `json:"expires_in_seconds"`
 	}{}
 
 	err := decodeJSON(r, &payload)
@@ -39,12 +42,29 @@ func (api *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	payloadExpiresIn, err := time.ParseDuration(fmt.Sprintf("%ds", payload.ExpiresInSeconds))
+
+	tokenExpiresIn := 24 * time.Hour // Default
+
+	if err == nil && payload.ExpiresInSeconds != 0 && payloadExpiresIn.Hours() < 24.0 {
+		tokenExpiresIn = payloadExpiresIn
+	}
+
+	token, err := api.jwt.GenerateToken(user.ID, tokenExpiresIn)
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	responeBody := struct {
 		ID    int    `json:"id"`
 		Email string `json:"email"`
+		Token string `json:"token"`
 	}{
 		ID:    user.ID,
 		Email: user.Email,
+		Token: token,
 	}
 
 	respondWithJSON(w, http.StatusOK, responeBody)
