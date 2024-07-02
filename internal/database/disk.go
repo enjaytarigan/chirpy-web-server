@@ -45,6 +45,26 @@ func (dbs *DBStructure) AddUser(user User) User {
 	return user
 }
 
+func (db *DBStructure) FindUser(f func(u User) bool) (u User, found bool) {
+	if len(db.Users) == 0 {
+		return User{}, false
+	}
+
+	for _, u := range db.Users {
+		if f(u) {
+			return u, true
+		}
+	}
+
+	return User{}, false
+}
+
+func (db *DBStructure) FindUserByID(userID int) (u User, found bool) {
+	u, ok := db.Users[userID]
+
+	return u, ok
+}
+
 type DB struct {
 	path string
 	mux  *sync.RWMutex

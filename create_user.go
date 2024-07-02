@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 
+	"github.com/enjaytarigan/chirpy-web-server/internal/database"
 	"github.com/enjaytarigan/chirpy-web-server/internal/security"
 )
 
@@ -18,7 +19,7 @@ func (api *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if api.db.CheckUserExist(body.Email) {
-		respondWithError(w, http.StatusConflict, "user has been registered")
+		respondWithError(w, http.StatusConflict, database.ErrEmailAlreadyRegistered.Error())
 		return
 	}
 
