@@ -2,6 +2,13 @@ package database
 
 import "time"
 
+type SortType string
+
+const (
+	SortAsc  SortType = "asc"
+	SortDesc SortType = "desc"
+)
+
 type Chirp struct {
 	ID       int    `json:"id"`
 	AuthorID int    `json:"author_id"`

@@ -1,6 +1,10 @@
 package database
 
-import "log"
+import (
+	"log"
+	"slices"
+	"strconv"
+)
 
 // CreateChirp creates a new chirp and saves it to disk
 func (db *DB) CreateChirp(body string, authorID int) (Chirp, error) {
@@ -26,17 +30,34 @@ func (db *DB) CreateChirp(body string, authorID int) (Chirp, error) {
 	return chirp, nil
 }
 
-func (db *DB) GetChirps() ([]Chirp, error) {
+type QueryGetChirps struct {
+	AuthorID string
+	Sort     string
+}
+
+func (db *DB) GetChirps(in QueryGetChirps) ([]Chirp, error) {
 	dbStructure, err := db.readDB()
 
 	if err != nil {
 		return []Chirp{}, err
 	}
 
-	var chirps []Chirp
+	var chirps = []Chirp{}
 	for _, chirp := range dbStructure.Chirps {
+		if in.AuthorID != "" && in.AuthorID != strconv.Itoa(chirp.AuthorID) {
+			continue
+		}
+
 		chirps = append(chirps, chirp)
 	}
+
+	slices.SortFunc(chirps, func(a Chirp, b Chirp) int {
+		if in.Sort == string(SortDesc) {
+			return b.ID - a.ID
+		}
+
+		return a.ID - b.ID
+	})
 
 	return chirps, nil
 }
